@@ -35,7 +35,7 @@ public class TeamController {
 
     @PostMapping(consumes = TEAM_REQUEST_API_VERSION)
     public Mono<ResponseEntity<Void>> createTeam(@RequestBody final TeamDetails teamDetails) {
-        System.out.println(String.format("Current thread %s", Thread.currentThread()));
+        System.out.println(String.format("Thread executing this task %s", Thread.currentThread()));
         return teamService.createTeam(teamDetails)
                 .flatMap(details -> Mono.just(new ResponseEntity<>(HttpStatus.NO_CONTENT)));
     }

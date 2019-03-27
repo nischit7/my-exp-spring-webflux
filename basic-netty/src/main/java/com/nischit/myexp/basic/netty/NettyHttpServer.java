@@ -75,7 +75,7 @@ public class NettyHttpServer {
             ch.pipeline().addLast("codec", new HttpServerCodec());
             ch.pipeline().addLast("aggregator", new HttpObjectAggregator(512*1024));
             ch.pipeline().addLast("request", new MyChannelInboundHandlerAdapter());
-            ch.pipeline().addLast("another", new MyAnotherInboundHandlerAdapter());
+            ch.pipeline().addLast(blockingCallThreadgroup,"another", new MyAnotherInboundHandlerAdapter());
         }
     }
 
