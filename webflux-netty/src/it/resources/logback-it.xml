@@ -1,0 +1,22 @@
+<!--
+  ~ Copyright (c) 2016. AirWatch, LLC. All rights reserved.
+  ~ This product is protected by copyright and intellectual property laws in the United States and  other countries as well as international treaties. AirWatch products may be covered by one or more patents listed at http://www.vmware.com/go/patents.
+  -->
+
+<configuration scan="true">
+
+	<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d %p \(%t\) [%c] - %m%n</pattern>
+		</encoder>
+	</appender>
+
+	<logger name="com.nischit.sample.myservice" level="debug"/>
+	<logger name="org.springframework.web" level="debug"/>
+	<logger name="reactor.netty" level="debug"/>
+
+	<root level="INFO">
+		<appender-ref ref="stdout" />
+	</root>
+
+</configuration>
