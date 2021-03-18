@@ -35,6 +35,9 @@ public class TeamPersistenceImpl implements TeamPersistence {
 
     @Override
     public Mono<Optional<TeamDetails>> getTeamInfo(final String teamId) {
+        // Not an ideal approach.
+        // Reactive threads are sensitive to blocking calls such as DB activity.
+        // In a real world, you might offload this operation to a separate worker thread.
         final Mono<Optional<TeamDetailsEntity>> teamEntity = Mono.just(teamDetailsRepository.findById(teamId));
         return teamEntity.map(teamDetailsEntity -> teamDetailsEntity.map(entity -> Optional.of(TeamDetails.builder()
                 .teamId(entity.getTeamId())

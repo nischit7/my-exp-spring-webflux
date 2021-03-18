@@ -15,6 +15,7 @@ import org.springframework.context.annotation.ComponentScan;
 @ComponentScan(basePackages = {
     "com.nischit.myexp.webflux.netty.api",
     "com.nischit.myexp.webflux.netty.persistence",
+    "com.nischit.myexp.webflux.netty.security",
     "com.nischit.myexp.webflux.netty.services"})
 public class MyApplication {
 
