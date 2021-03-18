@@ -12,8 +12,6 @@
 	</appender>
 
 	<logger name="com.nischit.sample.myservice" level="debug"/>
-	<logger name="org.springframework.web" level="debug"/>
-	<logger name="org.eclipse" level="debug"/>
 
 	<root level="info">
 		<appender-ref ref="stdout" />

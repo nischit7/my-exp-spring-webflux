@@ -1,14 +1,16 @@
 package com.nischit.myexp.webflux.netty.persistence.sql;
 
-import com.nischit.myexp.webflux.netty.persistence.TeamPersistence;
-import com.nischit.myexp.webflux.domain.TeamDetails;
-import com.nischit.myexp.webflux.netty.persistence.sql.entity.TeamDetailsEntity;
-import com.nischit.myexp.webflux.netty.persistence.sql.repository.TeamDetailsRepository;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
-import reactor.core.publisher.Mono;
 
-import java.util.Optional;
+import com.nischit.myexp.webflux.domain.TeamDetails;
+import com.nischit.myexp.webflux.netty.persistence.TeamPersistence;
+import com.nischit.myexp.webflux.netty.persistence.sql.entity.TeamDetailsEntity;
+import com.nischit.myexp.webflux.netty.persistence.sql.repository.TeamDetailsRepository;
+
+import reactor.core.publisher.Mono;
 
 @Repository
 public class TeamPersistenceImpl implements TeamPersistence {
@@ -21,8 +23,8 @@ public class TeamPersistenceImpl implements TeamPersistence {
     }
 
     @Override
-    public Mono<TeamDetails> createTeam(TeamDetails teamDetails) {
-        final TeamDetailsEntity teamDetailsEntity = new TeamDetailsEntity.Builder()
+    public Mono<TeamDetails> createTeam(final TeamDetails teamDetails) {
+        final TeamDetailsEntity teamDetailsEntity = TeamDetailsEntity.builder()
                 .teamId(teamDetails.getTeamId())
                 .teamName(teamDetails.getTeamName())
                 .teamDesc(teamDetails.getTeamDesc())
@@ -34,7 +36,7 @@ public class TeamPersistenceImpl implements TeamPersistence {
     @Override
     public Mono<Optional<TeamDetails>> getTeamInfo(final String teamId) {
         final Mono<Optional<TeamDetailsEntity>> teamEntity = Mono.just(teamDetailsRepository.findById(teamId));
-        return teamEntity.map(teamDetailsEntity -> teamDetailsEntity.map(entity -> Optional.of(new TeamDetails.Builder()
+        return teamEntity.map(teamDetailsEntity -> teamDetailsEntity.map(entity -> Optional.of(TeamDetails.builder()
                 .teamId(entity.getTeamId())
                 .teamName(entity.getTeamName())
                 .teamDesc(entity.getTeamDesc())

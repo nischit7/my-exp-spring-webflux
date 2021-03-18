@@ -1,7 +1,7 @@
 package com.nischit.myexp.basic.netty;
 
-import static io.netty.buffer.Unpooled.copiedBuffer;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -15,7 +15,7 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpServerCodec;
@@ -24,21 +24,38 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.EventExecutorGroup;
 
+/**
+ * Basic http server by using Netty.
+ * It is just a demonstration of where to add handlers.
+ * At a high level, Spring webflux underneath uses Netty similar approach.
+ */
 public class NettyHttpServer {
+
+    private static final int MAX_THREAD = 10;
+    private static final int SO_BACKLOG = 128;
+    private static final int MAX_CONTENT_LEN = 512 * 1024;
+    private static final int SERVER_PORT = 8080;
+
     private ChannelFuture channel;
     private final EventLoopGroup masterGroup;
     private final EventLoopGroup slaveGroup;
-    private EventExecutorGroup blockingCallThreadgroup = new DefaultEventExecutorGroup(10);
+    private EventExecutorGroup blockingCallThreadgroup = new DefaultEventExecutorGroup(MAX_THREAD);
 
     public NettyHttpServer() {
         masterGroup = new NioEventLoopGroup();
         slaveGroup = new NioEventLoopGroup();
     }
 
+    /**
+     * Starts the Netty HTTP server.
+     */
     public void start() {
-        Runtime.getRuntime().addShutdownHook(new Thread(){
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+
             @Override
-            public void run() { shutdown(); }
+            public void run() {
+                shutdown();
+            }
         });
 
         try {
@@ -47,24 +64,35 @@ public class NettyHttpServer {
                             .group(masterGroup, slaveGroup)
                             .channel(NioServerSocketChannel.class)
                             .childHandler(new ServerInitializer())
-                            .option(ChannelOption.SO_BACKLOG, 128)
+                            .option(ChannelOption.SO_BACKLOG, SO_BACKLOG)
                             .childOption(ChannelOption.SO_KEEPALIVE, true);
-            channel = bootstrap.bind(8080).sync();
+            channel = bootstrap.bind(SERVER_PORT).sync();
             //channels.add(bootstrap.bind(8080).sync());
+        } catch (final InterruptedException e) {
+            // Nothing to do
         }
-        catch (final InterruptedException e) { }
     }
 
+    /**
+     * Shuts down the http server.
+     */
     public void shutdown() {
         slaveGroup.shutdownGracefully();
         masterGroup.shutdownGracefully();
 
         try {
             channel.channel().closeFuture().sync();
-        } catch (InterruptedException e) { }
+        } catch (final InterruptedException e) {
+            // Nothing to do
+        }
     }
 
-    public static void main(String[] args) {
+    /**
+     * Starter main method.
+     *
+     * @param args Arguments.
+     */
+    public static void main(final String[] args) {
         new NettyHttpServer().start();
     }
 
@@ -73,27 +101,27 @@ public class NettyHttpServer {
         @Override
         public void initChannel(final SocketChannel ch) {
             ch.pipeline().addLast("codec", new HttpServerCodec());
-            ch.pipeline().addLast("aggregator", new HttpObjectAggregator(512*1024));
+            ch.pipeline().addLast("aggregator", new HttpObjectAggregator(MAX_CONTENT_LEN));
             ch.pipeline().addLast("request", new MyChannelInboundHandlerAdapter());
-            ch.pipeline().addLast(blockingCallThreadgroup,"another", new MyAnotherInboundHandlerAdapter());
+            ch.pipeline().addLast(blockingCallThreadgroup, "another", new MyAnotherInboundHandlerAdapter());
         }
     }
 
     private class MyChannelInboundHandlerAdapter extends ChannelInboundHandlerAdapter {
 
         @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
             if (msg instanceof FullHttpRequest) {
-                final FullHttpRequest request = (FullHttpRequest) msg;
+                final FullHttpRequest request = (FullHttpRequest)msg;
                 final String responseMessage = "Hello from Netty!";
-                FullHttpResponse response = new DefaultFullHttpResponse(
+                final FullHttpResponse response = new DefaultFullHttpResponse(
                         HttpVersion.HTTP_1_1,
                         HttpResponseStatus.OK,
-                        copiedBuffer(responseMessage.getBytes())
+                        Unpooled.copiedBuffer(responseMessage.getBytes())
                 );
 
                 if (HttpUtil.isKeepAlive(request)) {
-                    response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+                    response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
                 }
                 response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain");
                 response.headers().set(HttpHeaderNames.CONTENT_LENGTH, responseMessage.length());
@@ -105,16 +133,16 @@ public class NettyHttpServer {
         }
 
         @Override
-        public void channelReadComplete(ChannelHandlerContext ctx) {
+        public void channelReadComplete(final ChannelHandlerContext ctx) {
             ctx.flush();
         }
 
         @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
             ctx.writeAndFlush(new DefaultFullHttpResponse(
                     HttpVersion.HTTP_1_1,
                     HttpResponseStatus.INTERNAL_SERVER_ERROR,
-                    copiedBuffer(cause.getMessage().getBytes())
+                    Unpooled.copiedBuffer(cause.getMessage().getBytes())
             ));
         }
     }
@@ -122,7 +150,7 @@ public class NettyHttpServer {
     private class MyAnotherInboundHandlerAdapter extends ChannelInboundHandlerAdapter {
 
         @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) {
+        public void channelRead(final ChannelHandlerContext ctx, final Object msg) {
 
             ctx.fireChannelRead(msg);
         }

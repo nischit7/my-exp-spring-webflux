@@ -1,15 +1,35 @@
 package com.nischit.myexp.spring.async.persistence;
 
-import com.nischit.myexp.webflux.domain.TeamDetails;
-import reactor.core.publisher.Mono;
-
 import java.util.Optional;
 
+import com.nischit.myexp.webflux.domain.TeamDetails;
+
+/**
+ * Persistence layer to save team information.
+ */
 public interface TeamPersistence {
 
-    TeamDetails createTeam(final TeamDetails teamDetails);
+    /**
+     * Creates team.
+     *
+     * @param teamDetails An instance of {@link TeamDetails}.
+     * @return An instance of {@link TeamDetails}.
+     */
+    TeamDetails createTeam(TeamDetails teamDetails);
 
-    Optional<TeamDetails> getTeamInfo(final String teamId);
+    /**
+     * Get team info.
+     *
+     * @param teamId Team id
+     * @return An instance of {@link Optional}.
+     */
+    Optional<TeamDetails> getTeamInfo(String teamId);
 
-    boolean deleteTeam(final String teamId);
+    /**
+     * Deletes the team.
+     *
+     * @param teamId Team id
+     * @return Returns {@code true} if successful.
+     */
+    boolean deleteTeam(String teamId);
 }

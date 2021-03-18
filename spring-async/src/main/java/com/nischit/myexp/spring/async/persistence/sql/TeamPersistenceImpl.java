@@ -1,15 +1,18 @@
 package com.nischit.myexp.spring.async.persistence.sql;
 
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
 import com.nischit.myexp.spring.async.persistence.TeamPersistence;
 import com.nischit.myexp.spring.async.persistence.sql.entity.TeamDetailsEntity;
 import com.nischit.myexp.spring.async.persistence.sql.repository.TeamDetailsRepository;
 import com.nischit.myexp.webflux.domain.TeamDetails;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
-import reactor.core.publisher.Mono;
 
-import java.util.Optional;
-
+/**
+ * An implementation of {@link TeamPersistence}.
+ */
 @Repository
 public class TeamPersistenceImpl implements TeamPersistence {
 
@@ -21,21 +24,21 @@ public class TeamPersistenceImpl implements TeamPersistence {
     }
 
     @Override
-    public TeamDetails createTeam(TeamDetails teamDetails) {
-        final TeamDetailsEntity teamDetailsEntity = new TeamDetailsEntity.Builder()
+    public TeamDetails createTeam(final TeamDetails teamDetails) {
+        final TeamDetailsEntity teamDetailsEntity = TeamDetailsEntity.builder()
                 .teamId(teamDetails.getTeamId())
                 .teamName(teamDetails.getTeamName())
                 .teamDesc(teamDetails.getTeamDesc())
                 .build();
         // Dont make blocking call as below. This is just a demo
-        teamDetailsRepository.save(teamDetailsEntity);
+        this.teamDetailsRepository.save(teamDetailsEntity);
         return teamDetails;
     }
 
     @Override
     public Optional<TeamDetails> getTeamInfo(final String teamId) {
-        final Optional<TeamDetailsEntity> teamEntity = teamDetailsRepository.findById(teamId);
-        return teamEntity.map(entity -> Optional.of(new TeamDetails.Builder()
+        final Optional<TeamDetailsEntity> teamEntity = this.teamDetailsRepository.findById(teamId);
+        return teamEntity.map(entity -> Optional.of(TeamDetails.builder()
                 .teamId(entity.getTeamId())
                 .teamName(entity.getTeamName())
                 .teamDesc(entity.getTeamDesc())
@@ -46,7 +49,7 @@ public class TeamPersistenceImpl implements TeamPersistence {
     @Override
     public boolean deleteTeam(final String teamId) {
         // Dont make blocking call as below. This is just a demo
-        teamDetailsRepository.deleteById(teamId);
+        this.teamDetailsRepository.deleteById(teamId);
         return Boolean.TRUE;
     }
 }

@@ -1,26 +1,25 @@
 package com.nischit.myexp.webflux.netty.api;
 
-import com.nischit.myexp.webflux.domain.TeamDetails;
-import com.nischit.myexp.webflux.netty.services.TeamService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.springframework.http.ResponseEntity;
+
+import com.nischit.myexp.webflux.domain.TeamDetails;
+import com.nischit.myexp.webflux.netty.services.TeamService;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.http.HttpStatus.NO_CONTENT;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class TeamControllerTest {
@@ -38,12 +37,12 @@ public class TeamControllerTest {
     @Test
     @DisplayName("When subscriber/publisher is the main thread")
     public void withSubscriberBeingMain() {
-        when(mockTeamService.createTeam(any(TeamDetails.class))).thenReturn(Mono.just(new TeamDetails.Builder()
+        when(mockTeamService.createTeam(ArgumentMatchers.any(TeamDetails.class))).thenReturn(Mono.just(TeamDetails.builder()
                 .teamDesc("someteam")
                 .teamId("id")
                 .teamName("somename")
                 .build()));
-        final TeamDetails teamDetails = new TeamDetails.Builder().teamDesc("some team").teamId("US123").teamName("Phenoix").build();
+        final TeamDetails teamDetails = TeamDetails.builder().teamDesc("some team").teamId("US123").teamName("Phenoix").build();
         final Mono<ResponseEntity<Void>> voidResponseEntity = teamController.createTeam(teamDetails);
         voidResponseEntity.subscribe(response -> {
             System.out.println(String.format("Subscriber thread %s", Thread.currentThread()));
@@ -53,14 +52,14 @@ public class TeamControllerTest {
     @Test
     @DisplayName("When publisher is a different thread")
     public void withPublisherIsDifferentThread() throws InterruptedException {
-        when(mockTeamService.createTeam(any(TeamDetails.class))).thenReturn(Mono.just(new TeamDetails.Builder()
+        when(mockTeamService.createTeam(ArgumentMatchers.any(TeamDetails.class))).thenReturn(Mono.just(TeamDetails.builder()
                 .teamDesc("someteam")
                 .teamId("id")
                 .teamName("somename")
                 .build()));
-        final TeamDetails teamDetails = new TeamDetails.Builder().teamDesc("some team").teamId("US123").teamName("Phenoix").build();
+        final TeamDetails teamDetails = TeamDetails.builder().teamDesc("some team").teamId("US123").teamName("Phenoix").build();
         final Mono<ResponseEntity<Void>> voidResponseEntity = Mono.just(teamDetails)
-                .publishOn(Schedulers.elastic())
+                .publishOn(Schedulers.boundedElastic())
                 .flatMap(details -> teamController.createTeam(teamDetails));
         voidResponseEntity.subscribe(response -> {
             System.out.println(String.format("Subscriber thread %s", Thread.currentThread()));
@@ -71,14 +70,14 @@ public class TeamControllerTest {
     @Test
     @DisplayName("When subscriber is a different thread")
     public void withSubscriberIsDifferentThread() throws InterruptedException {
-        when(mockTeamService.createTeam(any(TeamDetails.class))).thenReturn(Mono.just(new TeamDetails.Builder()
+        when(mockTeamService.createTeam(ArgumentMatchers.any(TeamDetails.class))).thenReturn(Mono.just(TeamDetails.builder()
                 .teamDesc("someteam")
                 .teamId("id")
                 .teamName("somename")
                 .build()));
-        final TeamDetails teamDetails = new TeamDetails.Builder().teamDesc("some team").teamId("US123").teamName("Phenoix").build();
+        final TeamDetails teamDetails = TeamDetails.builder().teamDesc("some team").teamId("US123").teamName("Phenoix").build();
         final Mono<ResponseEntity<Void>> voidResponseEntity = Mono.just(teamDetails)
-                .subscribeOn(Schedulers.elastic())
+                .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(details -> teamController.createTeam(teamDetails));
         voidResponseEntity.subscribe(response -> {
             System.out.println(String.format("Subscriber thread %s", Thread.currentThread()));
@@ -89,32 +88,7 @@ public class TeamControllerTest {
     @Test
     @DisplayName("Understand custom subscriber")
     public void withCustomSubscriber() throws InterruptedException {
-        Subscriber<String> subscriber = new Subscriber<>() {
-            private long count = 0;
-            private Subscription subscription;
-            @Override
-            public void onSubscribe(Subscription subscription) {
-                this.subscription = subscription;
-                subscription.request(3);
-            }
 
-            @Override
-            public void onNext(String integer) {
-                System.out.println(integer + " after onNext using thread: " + Thread.currentThread().getName());
-                count++;
-                subscription.request(3);
-            }
-
-            @Override
-            public void onError(Throwable t) {
-
-            }
-
-            @Override
-            public void onComplete() {
-
-            }
-        };
         Flux.just("red", "white", "blue", "1", "2", "5", "6", "8")
                 //.parallel()
                 //.runOn(Schedulers.parallel())
@@ -123,26 +97,26 @@ public class TeamControllerTest {
                 //.publishOn(Schedulers.elastic())
                 .subscribe(new Subscriber<String>() {
 
-                    private long count = 0;
+                    private long count;
                     private Subscription subscription;
 
                     @Override
-                    public void onSubscribe(Subscription subscription) {
+                    public void onSubscribe(final Subscription subscription) {
                         this.subscription = subscription;
                         subscription.request(2);
                     }
 
                     @Override
-                    public void onNext(String t) {
+                    public void onNext(final String t) {
                         count++;
-                        if (count>=2) {
+                        if (count >= 2) {
                             count = 0;
                             subscription.request(2);
                         }
                     }
 
                     @Override
-                    public void onError(Throwable t) {
+                    public void onError(final Throwable t) {
 
                     }
 
@@ -173,7 +147,7 @@ public class TeamControllerTest {
                 .subscribeOn(Schedulers.parallel())
                 .publishOn(Schedulers.newSingle("second"))
                 .doOnNext(s -> System.out.println(s + " after2 publishOn using thread: " + Thread.currentThread().getName()))
-                .subscribeOn(Schedulers.elastic())
+                .subscribeOn(Schedulers.boundedElastic())
                 .subscribe(integer -> {
                     System.out.println(" consumer processed "
                             + integer + " using thread: " + Thread.currentThread().getName());
