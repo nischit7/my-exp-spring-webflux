@@ -1,6 +1,7 @@
 # Experiments on spring webflux
 
 Play with various abilities of webflux.
+It extends parent POM https://github.com/nischit7/java-web-base to make use all dependency management, plugins. 
 
 # basic-netty
 
